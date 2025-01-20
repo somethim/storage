@@ -2,7 +2,8 @@
 
 namespace zennit\Storage\Exceptions;
 
-class StorageException extends \Exception
+use Exception;
+
+class StorageException extends Exception
 {
-    //
 }

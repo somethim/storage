@@ -2,6 +2,6 @@
 
 namespace zennit\Storage\Contracts;
 
-interface StorageManager
+interface FileScanInterface
 {
 }
