@@ -2,6 +2,6 @@
 
 namespace zennit\Storage\DTO;
 
-class ChunkUploadRequest
+readonly class ChunkUploadRequest
 {
 }

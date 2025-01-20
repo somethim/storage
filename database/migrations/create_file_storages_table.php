@@ -18,6 +18,7 @@ return new class () extends Migration
             $table->json('metadata')->nullable();
             $table->string('encryption_key')->nullable();
             $table->boolean('is_compressed')->default(false);
+            $table->nullableMorphs('storable');
             $table->timestamps();
             $table->softDeletes();
         });

@@ -15,11 +15,20 @@ return new class () extends Migration
             $table->json('scan_details')->nullable();
             $table->timestamp('scanned_at');
             $table->timestamps();
+            $table->index('scanned_at');
+        });
+
+        Schema::table('file_storages', function (Blueprint $table) {
+            $table->timestamp('last_scanned_at')->nullable();
         });
     }
 
     public function down(): void
     {
         Schema::dropIfExists('file_scan_results');
+
+        Schema::table('file_storages', function (Blueprint $table) {
+            $table->dropColumn('last_scanned_at');
+        });
     }
 };

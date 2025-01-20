@@ -2,17 +2,14 @@
 
 namespace zennit\Storage\DTO;
 
-use File;
-use zennit\Storage\Traits\StorageHasConfigurations;
+use Illuminate\Http\UploadedFile;
 
 readonly class StorageOperationRequest
 {
-    use StorageHasConfigurations;
-
     public function __construct(
         public string $path,
-        public File $file,
-        public string $disk = 'local',
+        public UploadedFile $contents,
+        public string $disk,
     ) {
     }
 }

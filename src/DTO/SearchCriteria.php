@@ -2,6 +2,6 @@
 
 namespace zennit\Storage\DTO;
 
-class SearchCriteria
+readonly class SearchCriteria
 {
 }

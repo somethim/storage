@@ -2,6 +2,6 @@
 
 namespace zennit\Storage\DTO;
 
-class BatchOperationRequest
+readonly class BatchOperationRequest
 {
 }

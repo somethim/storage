@@ -2,6 +2,6 @@
 
 namespace zennit\Storage\DTO;
 
-class SharingConfig
+readonly class SharingConfig
 {
 }

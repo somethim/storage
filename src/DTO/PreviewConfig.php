@@ -2,6 +2,6 @@
 
 namespace zennit\Storage\DTO;
 
-class PreviewConfig
+readonly class PreviewConfig
 {
 }

@@ -3,12 +3,12 @@
 namespace zennit\Storage\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use zennit\Storage\Contracts\StorageManager;
+use zennit\Storage\Contracts\StorageManagerInterface;
 
 class Storage extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return StorageManager::class;
+        return StorageManagerInterface::class;
     }
 }

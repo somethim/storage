@@ -6,9 +6,9 @@ management, and more.
 
 ## 1. Set up the File Storage Package
 
-- [ ] **File Storage**
-- [ ] **Cloud Storage**
-- [ ] **Virus Scanning**
+- [x] **File Storage**
+- [x] **Cloud Storage**
+- [x] **Virus Scanning**
 - [ ] **File Encryption**
 - [ ] **File Decryption**
 - [ ] **File Compression**
