@@ -1,0 +1,83 @@
+{
+  "name": "zennit/storage",
+  "description": "Storage management for Laravel",
+  "version": "5.0.3",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "laravel",
+    "storage",
+    "filesystem",
+    "backup",
+    "encryption",
+    "compression",
+    "virusscan"
+  ],
+  "homepage": "https://github.com/somethim/storage",
+  "support": {
+    "issues": "https://github.com/somethim/storage/issues",
+    "source": "https://github.com/somethim/storage"
+  },
+  "readme": "README.md",
+  "authors": [
+    {
+      "name": "zennit",
+      "email": "contact@zennit.dev",
+      "homepage": "https://zennit.dev"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "laravel/framework": "^11.2"
+  },
+  "require-dev": {
+    "laravel/pint": "^1.18",
+    "phpunit/phpunit": "^11.5",
+    "orchestra/testbench": "^9.8",
+    "mockery/mockery": "^1.6",
+    "phpbench/phpbench": "^1.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "zennit\\Storage\\": "src/"
+    },
+    "files": [
+      "src/helpers.php"
+    ]
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "zennit\\Storage\\Providers\\StorageServiceProvider"
+      ],
+      "config": {
+        "storage": "config/storage.php"
+      },
+      "aliases": {
+        "Storage": "zennit\\Storage\\Facades\\Storage"
+      }
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "scripts": {
+    "version-patch": [
+      "php -f scripts/version.php patch"
+    ],
+    "version-minor": [
+      "php -f scripts/version.php minor"
+    ],
+    "version-major": [
+      "php -f scripts/version.php major"
+    ]
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/somethim/storage"
+    }
+  ]
+}

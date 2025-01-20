@@ -1,0 +1,10 @@
+{
+    "laravel": {
+        "providers": [
+            "zennit\\Storage\\Providers\\StorageServiceProvider"
+        ],
+        "aliases": {
+            "Storage": "zennit\\Storage\\Facades\\Storage"
+        }
+    }
+}
