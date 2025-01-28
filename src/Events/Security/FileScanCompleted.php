@@ -1,19 +1,19 @@
 <?php
 
-namespace zennit\Storage\Events;
+namespace zennit\Storage\Events\Security;
 
 use Illuminate\Broadcasting\PrivateChannel;
 use zennit\Storage\Events\EventSetup\BroadcastableEvent;
 use zennit\Storage\Events\EventSetup\BroadcastConfiguration;
 
-class FileShared implements BroadcastableEvent
+class FileScanCompleted implements BroadcastableEvent
 {
     use BroadcastConfiguration;
 
-    public function __construct(string|array|int $message = 'File shared successfully!')
+    public function __construct(string|array|int $message = 'File scan completed successfully!')
     {
         $this->message = $message;
-        $this->channel = 'file-shared';
+        $this->channel = 'file-scan-completed';
         $this->channelType = PrivateChannel::class;
     }
 }

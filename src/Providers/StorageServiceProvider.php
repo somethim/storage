@@ -11,9 +11,22 @@ use zennit\Storage\Services\Security\Scanners\ClamAvScanner;
 use zennit\Storage\Services\Security\Scanners\VirusTotalScanner;
 use zennit\Storage\Console\Commands\RescanStoredFiles;
 use zennit\Storage\Contracts\StorageManagerInterface;
+use zennit\Storage\Events\FileUploaded;
+use zennit\Storage\Listeners\ScanForVirus;
+use zennit\Storage\Events\Security\FileQuarantinedEvent;
+use zennit\Storage\Listeners\NotifyFileQuarantined;
 
 class StorageServiceProvider extends ServiceProvider
 {
+    protected $listen = [
+        FileUploaded::class => [
+            ScanForVirus::class,
+        ],
+        FileQuarantinedEvent::class => [
+            NotifyFileQuarantined::class,
+        ],
+    ];
+
     public function register(): void
     {
         // Register Storage Service

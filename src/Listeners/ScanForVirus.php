@@ -2,15 +2,22 @@
 
 namespace zennit\Storage\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
 use zennit\Storage\Events\FileUploaded;
-use zennit\Storage\Jobs\ScanFile;
+use zennit\Storage\Listeners\ListenerSetup\BroadcastsToRedis;
 
-class ScanForVirus implements ShouldQueue
+class ScanForVirus
 {
+    use BroadcastsToRedis;
+
+    /**
+     * Handle the event.
+     *
+     * @param FileUploaded $event
+     *
+     * @return void
+     */
     public function handle(FileUploaded $event): void
     {
-        ScanFile::dispatch($event->filepath, $event->fileId)
-            ->onQueue('virus-scans');
+        $this->publishToRedis($event);
     }
 }

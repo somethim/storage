@@ -1,6 +1,6 @@
 <?php
 
-use zennit\Storage\Events\FileQuarantinedEvent;
+use zennit\Storage\Events\Security\FileQuarantinedEvent;
 
 return [
     'clamav' => env('CLAMAV_HOST', 'localhost') . ':' . env('CLAMAV_PORT', 3310),
@@ -25,6 +25,7 @@ return [
 
     'scan_events' => [
         'file_quarantined' => FileQuarantinedEvent::class,
+        'scan_completed' => \zennit\Storage\Events\Security\FileScanCompleted::class,
     ],
 
     'scan_log_channel' => env('SCAN_LOG_CHANNEL', 'file_operations'),
@@ -54,4 +55,14 @@ return [
     ],
 
     'hash_algorithms' => ['sha256', 'md5'],
+
+    'notifications' => [
+        'enabled' => env('SCAN_NOTIFICATIONS_ENABLED', true),
+        
+        'notify_user' => env('SCAN_NOTIFY_USER'),
+        
+        'quarantine_notify_emails' => array_filter(
+            explode(',', env('SCAN_QUARANTINE_NOTIFY_EMAILS', ''))
+        ),
+    ],
 ];

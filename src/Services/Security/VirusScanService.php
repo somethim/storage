@@ -78,23 +78,6 @@ readonly class VirusScanService
     }
 
     /**
-     * Create a secure temporary directory for scanning
-     *
-     * @throws RuntimeException If the directory cannot be created
-     * @return string The path to the temporary directory
-     */
-    private function createSecureTempPath(): string
-    {
-        $tempPath = storage_path('temp/scans/' . uniqid('scan_', true));
-
-        if (!mkdir($tempPath, 0755, true)) {
-            throw new RuntimeException('Failed to create temporary scan directory');
-        }
-
-        return $tempPath;
-    }
-
-    /**
      * Scan existing file in storage
      *
      * This method scans an existing file in storage for viruses using the configured scanners.
@@ -182,6 +165,23 @@ readonly class VirusScanService
 
             throw new RuntimeException('Virus scan failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Create a secure temporary directory for scanning
+     *
+     * @throws RuntimeException If the directory cannot be created
+     * @return string The path to the temporary directory
+     */
+    private function createSecureTempPath(): string
+    {
+        $tempPath = storage_path('temp/scans/' . uniqid('scan_', true));
+
+        if (!mkdir($tempPath, 0755, true)) {
+            throw new RuntimeException('Failed to create temporary scan directory');
+        }
+
+        return $tempPath;
     }
 
     /**
