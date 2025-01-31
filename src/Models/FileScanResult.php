@@ -11,6 +11,9 @@ class FileScanResult extends Model
         'is_clean',
         'scan_details',
         'scanned_at',
+        'scan_result',
+        'scan_result_at',
+        'quarantine_path',
     ];
 
     protected $casts = [

@@ -8,14 +8,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use zennit\Storage\Services\Security\Contracts\AntivirusScanner;
+use zennit\Storage\Services\Security\Scanners\DTO\ScanResult;
+use zennit\Storage\Services\Security\Scanners\DTO\VirusTotalResponse;
 
 class VirusTotalScanner implements AntivirusScanner
 {
-    private Client $client;
-
-    private string $apiKey;
-
-    public function __construct()
+    public function __construct(private string $apiKey, private Client $client)
     {
         $this->client = new Client();
         $this->apiKey = config('scanning.virustotal.api_key');
@@ -25,46 +23,45 @@ class VirusTotalScanner implements AntivirusScanner
         }
     }
 
-    public function scan(string $filepath): array
+    public function scan(string $filepath): ScanResult
     {
         $cacheKey = 'virustotal_' . md5($filepath);
         if ($cachedResult = Cache::get($cacheKey)) {
             return $cachedResult;
         }
 
+        $uploadUrl = $this->getUploadUrl();
+        $analysisId = $this->uploadFile($uploadUrl, $filepath);
+        $result = $this->getAnalysisResults($analysisId);
+
+        $scanResult = new ScanResult(
+            is_clean:  $result->last_analysis_stats->getMaliciousCount() === 0,
+            scans:     'virustotal',
+            malicious: $result->last_analysis_stats->getMaliciousCount(),
+            result:    $result->last_analysis_results->toArray(),
+            scan_time: now(),
+        );
+
+        Cache::put($cacheKey, $scanResult, now()->addHours(config('scanning.cache.ttl')));
+
+        return $scanResult;
+    }
+
+    private function getUploadUrl(): string
+    {
+        return $this->makeRequest(config('scanning.virustotal.url.upload'), 'GET')['data'];
+    }
+
+    private function makeRequest(string $url, string $method, array $data = []): array
+    {
         try {
-            $uploadUrl = $this->getUploadUrl();
-            $analysisId = $this->uploadFile($uploadUrl, $filepath);
-            $result = $this->getAnalysisResults($analysisId);
+            $response = $this->client->request($method, $url, ['headers' => $this->getHeaders(), 'json' => $data]);
 
-            $scanResult = [
-                'scanner' => 'virustotal',
-                'is_clean' => $result['status'] === 'completed' && $result['stats']['malicious'] === 0,
-                'threat_details' => $result['stats'],
-                'scan_time' => now(),
-                'scan_id' => $analysisId,
-            ];
-
-            Cache::put($cacheKey, $scanResult, now()->addHours(config('scanning.cache.ttl')));
-
-            return $scanResult;
-
+            return json_decode($response->getBody()->getContents(), true);
         } catch (GuzzleException $e) {
             Log::error('VirusTotal scan failed: ' . $e->getMessage());
             throw new RuntimeException('VirusTotal scan failed: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * @throws GuzzleException
-     */
-    private function getUploadUrl(): string
-    {
-        $response = $this->client->request('GET', 'https://www.virustotal.com/api/v3/files/upload_url', [
-            'headers' => $this->getHeaders(),
-        ]);
-
-        return json_decode($response->getBody()->getContents(), true)['data'];
     }
 
     private function getHeaders(): array
@@ -75,46 +72,34 @@ class VirusTotalScanner implements AntivirusScanner
         ];
     }
 
-    /**
-     * @throws GuzzleException
-     */
     private function uploadFile(string $uploadUrl, string $filepath): string
     {
-        $response = $this->client->request('POST', $uploadUrl, [
-            'headers' => $this->getHeaders(),
-            'multipart' => [
-                [
-                    'name' => 'file',
-                    'contents' => fopen($filepath, 'r'),
-                    'filename' => basename($filepath),
-                ],
-            ],
-        ]);
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        return $data['data']['id'];
+        return $this->makeRequest($uploadUrl, 'POST', [
+            'multipart' => [[
+                'name' => 'file',
+                'contents' => fopen($filepath, 'r'),
+                'filename' => basename($filepath),
+            ]],
+        ])['data']['id'];
     }
 
-    /**
-     * @throws GuzzleException
-     */
-    private function getAnalysisResults(string $analysisId): array
+    private function getAnalysisResults(string $analysisId): VirusTotalResponse
     {
-        $maxRetries = config('scanning.virustotal.max_retries', 5);
-        $retryDelay = config('scanning.virustotal.retry_delay', 15);
+        $maxRetries = config('scanning.virustotal.retry');
+        $retryDelay = config('scanning.virustotal.delay');
 
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
             sleep($retryDelay);
 
-            $response = $this->client->request('GET', "https://www.virustotal.com/api/v3/analyses/$analysisId", [
-                'headers' => $this->getHeaders(),
-            ]);
+            $url = config('scanning.virustotal.url.report') . '/' . $analysisId;
+            $response = $this->makeRequest($url, 'GET');
+            $attributes = $response['data']['attributes'];
 
-            $result = json_decode($response->getBody()->getContents(), true);
-            $status = $result['data']['attributes']['status'];
-
-            if ($status !== 'queued') {
-                return $result['data']['attributes'];
+            if ($attributes['status'] !== 'queued') {
+                return VirusTotalResponse::fromArray(
+                    $attributes['last_analysis_results'],
+                    $attributes['last_analysis_stats'],
+                );
             }
         }
 
@@ -124,7 +109,7 @@ class VirusTotalScanner implements AntivirusScanner
     public function isAvailable(): bool
     {
         try {
-            $response = $this->client->request('GET', 'https://www.virustotal.com/api/v3/users/current', [
+            $response = $this->client->request('GET', config('scanning.virustotal.url.base'), [
                 'headers' => $this->getHeaders(),
             ]);
 

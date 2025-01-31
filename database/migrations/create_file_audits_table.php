@@ -10,12 +10,16 @@ return new class () extends Migration
     {
         Schema::create('file_audits', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('file_storage_id')->constrained('file_storages');
+            $table->foreignId('file_storage_id')->constrained('file_storages')->noActionOnDelete();
             $table->string('action');
             $table->string('actor');
             $table->json('details')->nullable();
-            $table->ipAddress()->nullable();
+            $table->ipAddress('ip_address')->nullable();
             $table->string('user_agent')->nullable();
+            $table->string('session_id')->nullable();
+            $table->json('metadata')->nullable();
+            $table->string('status')->nullable();
+            $table->text('error_message')->nullable();
             $table->timestamps();
         });
     }

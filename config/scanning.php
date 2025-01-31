@@ -1,22 +1,22 @@
 <?php
 
 use zennit\Storage\Events\Security\FileQuarantinedEvent;
+use zennit\Storage\Events\Security\FileScanCompleted;
 
 return [
     'clamav' => env('CLAMAV_HOST', 'localhost') . ':' . env('CLAMAV_PORT', 3310),
+
     'virustotal' => [
         'api_key' => env('VIRUSTOTAL_API_KEY'),
-        'scan_sm' => [
-            'size' => 33554432, // 32MB
-            'url' => 'virustotal.com/api/v3/files',
-            'method' => 'POST',
+
+        'url' => [
+            'base' => 'https://www.virustotal.com/api/v3/users/current',
+            'upload' => 'https://www.virustotal.com/api/v3/files/upload_url',
+            'report' => 'https://www.virustotal.com/api/v3/files',
         ],
-        'scan_lg' => [
-            'size' => 681574400, // 650MB
-            'url' => 'virustotal.com/api/v3/urls',
-            'method' => 'GET',
-        ],
-        'scan_report' => 'https://www.virustotal.com/api/v3/files/%s',
+
+        'retry' => 3,
+        'delay' => 15,
     ],
 
     'quarantine_path' => env('QUARANTINE_PATH', storage_path('quarantine')),
@@ -25,7 +25,7 @@ return [
 
     'scan_events' => [
         'file_quarantined' => FileQuarantinedEvent::class,
-        'scan_completed' => \zennit\Storage\Events\Security\FileScanCompleted::class,
+        'scan_completed' => FileScanCompleted::class,
     ],
 
     'scan_log_channel' => env('SCAN_LOG_CHANNEL', 'file_operations'),
@@ -58,9 +58,9 @@ return [
 
     'notifications' => [
         'enabled' => env('SCAN_NOTIFICATIONS_ENABLED', true),
-        
+
         'notify_user' => env('SCAN_NOTIFY_USER'),
-        
+
         'quarantine_notify_emails' => array_filter(
             explode(',', env('SCAN_QUARANTINE_NOTIFY_EMAILS', ''))
         ),

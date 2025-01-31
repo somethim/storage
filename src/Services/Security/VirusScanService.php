@@ -7,10 +7,11 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use RuntimeException;
-use zennit\Storage\DTO\ScanResult;
+use Throwable;
 use zennit\Storage\Models\FileScanResult;
 use zennit\Storage\Notifications\FileScanComplete;
 use zennit\Storage\Services\Security\Scanners\ClamAvScanner;
+use zennit\Storage\Services\Security\Scanners\DTO\ScanResult;
 use zennit\Storage\Services\Security\Scanners\VirusTotalScanner;
 
 /**
@@ -44,7 +45,7 @@ readonly class VirusScanService
     public function scanUpload(UploadedFile $file): ScanResult
     {
         // Create secure temp directory for scanning
-        $tempPath = $this->createSecureTempPath();
+        $tempPath = $this->createSecureTmpPath();
 
         try {
             // Move to secure temp location for scanning
@@ -78,6 +79,23 @@ readonly class VirusScanService
     }
 
     /**
+     * Create a secure temporary directory for scanning
+     *
+     * @throws RuntimeException If the directory cannot be created
+     * @return string The path to the temporary directory
+     */
+    private function createSecureTmpPath(): string
+    {
+        $tempPath = storage_path('temp/scans/' . uniqid('scan_', true));
+
+        if (!mkdir($tempPath, 0755, true)) {
+            throw new RuntimeException('Failed to create temporary scan directory');
+        }
+
+        return $tempPath;
+    }
+
+    /**
      * Scan existing file in storage
      *
      * This method scans an existing file in storage for viruses using the configured scanners.
@@ -90,98 +108,81 @@ readonly class VirusScanService
      */
     public function scan(string $filepath, ?int $fileStorageId = null): ScanResult
     {
-        $scans = [];
-        $threats_found = [];
-        $is_clean = true;
-
         try {
+            $scanResults = [];
+            $totalMalicious = 0;
+            $combinedResults = [];
+
             // Run ClamAV scan
             if ($this->clamAvScanner->isAvailable()) {
                 $clamResult = $this->clamAvScanner->scan($filepath);
-                $scans['clamav'] = $clamResult;
-
-                if (!$clamResult['is_clean']) {
-                    $is_clean = false;
-                    $threats_found[] = ['scanner' => 'clamav', 'threat' => $clamResult['threat_name']];
-                }
+                $scanResults['clamav'] = $clamResult;
+                $totalMalicious += $clamResult->malicious;
+                $combinedResults = array_merge($combinedResults, $clamResult->result ?? []);
             }
 
             // Run VirusTotal scan
             if ($this->virusTotalScanner->isAvailable()) {
                 $vtResult = $this->virusTotalScanner->scan($filepath);
-                $scans['virustotal'] = $vtResult;
-
-                if (!$vtResult['is_clean']) {
-                    $is_clean = false;
-                    $threats_found[] = ['scanner' => 'virustotal', 'threat' => $vtResult['threat_details']];
-                }
+                $scanResults['virustotal'] = $vtResult;
+                $totalMalicious += $vtResult->malicious;
+                $combinedResults = array_merge($combinedResults, $vtResult->result ?? []);
             }
 
-            // If no scanners were available
-            if (empty($scans)) {
+            if (empty($scanResults)) {
                 throw new RuntimeException('No virus scanners available');
             }
 
-            $results = new ScanResult(
-                is_clean:      $is_clean,
-                scans:         $scans,
-                threats_found: $threats_found,
-                scan_time:     now()
+            // Create aggregated scan result
+            $aggregatedResult = new ScanResult(
+                is_clean:  $totalMalicious === 0,
+                scans:     implode(',', array_keys($scanResults)),
+                malicious: $totalMalicious,
+                result:    $combinedResults,
+                scan_time: now()
             );
 
-            // If threats were found in storage, quarantine the file
-            if (!$results->is_clean) {
-                $this->quarantineFile($filepath);
+            // Store scan result
+            $result = FileScanResult::create([
+                'file_storage_id' => $fileStorageId,
+                'is_clean' => $aggregatedResult->is_clean,
+                'scan_result' => $scanResults,
+                'scan_result_at' => $aggregatedResult->scan_time,
+                'scan_details' => $combinedResults,
+                'scanned_at' => $aggregatedResult->scan_time,
+            ]);
 
-                // Store scan result
-                if ($fileStorageId) {
-                    FileScanResult::create([
-                        'file_storage_id' => $fileStorageId,
-                        'scan_result' => [
-                            'is_clean' => $results->is_clean,
-                            'scans' => $results->scans,
-                            'threats_found' => $results->threats_found,
-                            'scan_time' => $results->scan_time,
-                        ],
-                        'scan_result_at' => now(),
-                    ]);
-                }
-
-                // Dispatch event
-                $eventClass = config('scanning.scan_events.file_quarantined');
-                event(new $eventClass($filepath, $results));
-
-                // Send notification if configured
-                if (config('scanning.notifications.enabled')) {
-                    $notifiable = config('scanning.notifications.notify_user');
-                    Notification::send($notifiable, new FileScanComplete($results->toArray()));
-                }
+            // Handle quarantine if needed
+            if (!$aggregatedResult->is_clean) {
+                $this->handleMaliciousFile($filepath, $result);
             }
 
-            return $results;
+            return $aggregatedResult;
 
-        } catch (Exception $e) {
-            Log::error('Virus scan failed: ' . $e->getMessage(), ['filepath' => $filepath, 'error' => $e->getMessage()]);
-
+        } catch (Exception|Throwable $e) {
+            Log::error('Virus scan failed: ' . $e->getMessage(), [
+                'filepath' => $filepath,
+                'error' => $e->getMessage(),
+            ]);
             throw new RuntimeException('Virus scan failed: ' . $e->getMessage());
         }
     }
 
     /**
-     * Create a secure temporary directory for scanning
-     *
-     * @throws RuntimeException If the directory cannot be created
-     * @return string The path to the temporary directory
+     * @throws Throwable
      */
-    private function createSecureTempPath(): string
+    private function handleMaliciousFile(string $filepath, FileScanResult $result): void
     {
-        $tempPath = storage_path('temp/scans/' . uniqid('scan_', true));
+        $quarantinePath = $this->quarantineFile($filepath);
+        $result->updateOrFail(['quarantine_path' => $quarantinePath]);
 
-        if (!mkdir($tempPath, 0755, true)) {
-            throw new RuntimeException('Failed to create temporary scan directory');
+        $eventClass = config('scanning.scan_events.file_quarantined');
+        event(new $eventClass());
+
+        if (config('scanning.notifications.enabled')) {
+            $notifiable = config('scanning.notifications.notify_user');
+            Notification::send($notifiable, new FileScanComplete($result->toArray()));
         }
-
-        return $tempPath;
     }
 
     /**
@@ -191,7 +192,7 @@ readonly class VirusScanService
      *
      * @throws RuntimeException If the file cannot be moved
      */
-    private function quarantineFile(string $filepath): void
+    private function quarantineFile(string $filepath): string
     {
         $quarantinePath = config('scanning.quarantine_path', storage_path('quarantine'));
         $quarantineFile = $quarantinePath . '/' . basename($filepath) . '_' . time();
@@ -207,6 +208,8 @@ readonly class VirusScanService
         }
 
         Log::warning('File quarantined', ['original_path' => $filepath, 'quarantine_path' => $quarantineFile]);
+
+        return $quarantineFile;
     }
 
     private function cleanupTempPath(string $path): void

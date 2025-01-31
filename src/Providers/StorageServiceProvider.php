@@ -2,19 +2,19 @@
 
 namespace zennit\Storage\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Filesystem\FilesystemManager;
-use zennit\Storage\Services\Core\StorageService;
-use zennit\Storage\Services\Security\VirusScanService;
-use zennit\Storage\Services\Security\Scanners\ClamAvScanner;
-use zennit\Storage\Services\Security\Scanners\VirusTotalScanner;
+use Illuminate\Support\ServiceProvider;
 use zennit\Storage\Console\Commands\RescanStoredFiles;
 use zennit\Storage\Contracts\StorageManagerInterface;
 use zennit\Storage\Events\FileUploaded;
-use zennit\Storage\Listeners\ScanForVirus;
 use zennit\Storage\Events\Security\FileQuarantinedEvent;
 use zennit\Storage\Listeners\NotifyFileQuarantined;
+use zennit\Storage\Listeners\ScanForVirus;
+use zennit\Storage\Services\Core\StorageService;
+use zennit\Storage\Services\Security\Scanners\ClamAvScanner;
+use zennit\Storage\Services\Security\Scanners\VirusTotalScanner;
+use zennit\Storage\Services\Security\VirusScanService;
 
 class StorageServiceProvider extends ServiceProvider
 {
@@ -56,14 +56,16 @@ class StorageServiceProvider extends ServiceProvider
     {
         // Register config
         $this->mergeConfigFrom(
-            __DIR__.'/../../config/storage.php', 'storage'
+            __DIR__ . '/../../config/storage.php',
+            'storage'
         );
         $this->mergeConfigFrom(
-            __DIR__.'/../../config/scanning.php', 'scanning'
+            __DIR__ . '/../../config/scanning.php',
+            'scanning'
         );
 
         // Register migrations
-        $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
 
         // Register commands
         if ($this->app->runningInConsole()) {
@@ -75,7 +77,7 @@ class StorageServiceProvider extends ServiceProvider
         // Register scheduled tasks
         $this->app->booted(function () {
             $schedule = $this->app->make(Schedule::class);
-            
+
             // Run rescan every week
             $schedule->command('storage:rescan-files')
                 ->weekly()

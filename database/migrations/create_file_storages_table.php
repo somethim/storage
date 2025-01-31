@@ -19,6 +19,11 @@ return new class () extends Migration
             $table->string('encryption_key')->nullable();
             $table->boolean('is_compressed')->default(false);
             $table->nullableMorphs('storable');
+            $table->foreignId('original_file_id')->nullable()->constrained('file_storages');
+            $table->integer('reference_count')->default(1);
+            $table->timestamp('last_backup_at')->nullable();
+            $table->string('backup_status')->nullable();
+            $table->string('status')->default('active');
             $table->timestamps();
             $table->softDeletes();
         });

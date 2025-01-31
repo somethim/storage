@@ -17,6 +17,9 @@ return new class () extends Migration
             $table->string('chunk_path');
             $table->bigInteger('chunk_size');
             $table->timestamp('expires_at');
+            $table->string('chunk_hash')->nullable();
+            $table->boolean('is_validated')->default(false);
+            $table->json('validation_errors')->nullable();
             $table->timestamps();
         });
     }

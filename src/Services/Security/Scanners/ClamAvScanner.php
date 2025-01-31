@@ -9,6 +9,7 @@ use RuntimeException;
 use Socket\Raw\Factory;
 use Xenolope\Quahog\Client;
 use zennit\Storage\Services\Security\Contracts\AntivirusScanner;
+use zennit\Storage\Services\Security\Scanners\DTO\ScanResult;
 
 class ClamAvScanner implements AntivirusScanner
 {
@@ -32,7 +33,7 @@ class ClamAvScanner implements AntivirusScanner
         }
     }
 
-    public function scan(string $filepath): array
+    public function scan(string $filepath): ScanResult
     {
         $cacheKey = config('scanning.cache.prefix') . md5($filepath);
         if ($cachedResult = Cache::get($cacheKey)) {
@@ -41,13 +42,14 @@ class ClamAvScanner implements AntivirusScanner
 
         $result = $this->scanner->scanFile($filepath);
 
-        $scanResult = [
-            'scanner' => 'clamav',
-            'is_clean' => $result['status'] === 'OK',
-            'threat_name' => $result['status'] === 'FOUND' ? $result['reason'] : null,
-            'scan_time' => now(),
-            'filepath' => $filepath,
-        ];
+        $status = $result['status'] ?? 'FOUND';
+        $scanResult = new ScanResult(
+            is_clean:  $status === 'OK',
+            scans:     'clamav',
+            malicious: $result['reason'] ? 1 : 0,
+            result:    $result['reason'] ? [$result['reason']] : null,
+            scan_time: now(),
+        );
 
         Cache::put($cacheKey, $scanResult, now()->addHours(config('scanning.cache.ttl')));
 

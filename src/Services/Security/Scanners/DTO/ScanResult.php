@@ -1,6 +1,6 @@
 <?php
 
-namespace zennit\Storage\DTO;
+namespace zennit\Storage\Services\Security\Scanners\DTO;
 
 use DateTime;
 
@@ -8,8 +8,9 @@ readonly class ScanResult
 {
     public function __construct(
         public bool $is_clean,
-        public array $scans,
-        public array $threats_found,
+        public string $scans,
+        public int $malicious,
+        public ?array $result,
         public DateTime $scan_time,
     ) {
     }
@@ -19,7 +20,8 @@ readonly class ScanResult
         return [
             'is_clean' => $this->is_clean,
             'scans' => $this->scans,
-            'threats_found' => $this->threats_found,
+            'malicious' => $this->malicious,
+            'result' => $this->result,
             'scan_time' => $this->scan_time,
         ];
     }

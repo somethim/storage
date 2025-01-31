@@ -3,12 +3,13 @@
 namespace zennit\Storage\Console\Commands;
 
 use Illuminate\Console\Command;
-use zennit\Storage\Models\FileStorage;
 use zennit\Storage\Jobs\ScanFile;
+use zennit\Storage\Models\FileStorage;
 
 class RescanStoredFiles extends Command
 {
     protected $signature = 'storage:rescan-files {--older-than=30d : Only rescan files older than this}';
+
     protected $description = 'Rescan stored files for viruses';
 
     public function handle(): void
@@ -28,4 +29,4 @@ class RescanStoredFiles extends Command
 
         $this->info('Rescan jobs dispatched successfully.');
     }
-} 
+}

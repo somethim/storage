@@ -3,8 +3,8 @@
 namespace zennit\Storage\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class FileScanComplete extends Notification
 {
@@ -21,11 +21,11 @@ class FileScanComplete extends Notification
 
     public function toMail(): MailMessage
     {
-        $message = $this->scanResults['is_clean'] 
-            ? 'File scan completed successfully.' 
+        $message = $this->scanResults['is_clean']
+            ? 'File scan completed successfully.'
             : 'Security threat detected in file!';
 
-        $mail = (new MailMessage)
+        $mail = (new MailMessage())
             ->subject('File Scan Complete')
             ->line($message);
 

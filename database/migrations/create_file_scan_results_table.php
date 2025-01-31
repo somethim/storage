@@ -12,10 +12,11 @@ return new class () extends Migration
             $table->id();
             $table->foreignId('file_storage_id')->constrained('file_storages');
             $table->boolean('is_clean');
-            $table->json('scan_details')->nullable();
-            $table->timestamp('scanned_at');
+            $table->json('scan_result')->nullable();
+            $table->timestamp('scan_result_at');
+            $table->string('quarantine_path')->nullable();
             $table->timestamps();
-            $table->index('scanned_at');
+            $table->index('scan_result_at');
         });
 
         Schema::table('file_storages', function (Blueprint $table) {
