@@ -1,6 +1,6 @@
 <?php
 
-namespace zennit\Storage\Notifications;
+namespace zennit\Storage\Notifications\Security;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -15,7 +15,6 @@ class FileQuarantinedNotification extends Notification
      * Create a new notification instance.
      */
     public function __construct(
-        public readonly string $filePath,
         public readonly ScanResult $scanResult,
     ) {
     }
@@ -35,7 +34,7 @@ class FileQuarantinedNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $threats = collect($this->scanResult->threats_found)
+        $threats = collect($this->scanResult->result)
             ->map(fn ($threat) => "- {$threat['scanner']}: {$threat['threat']}")
             ->join("\n");
 
@@ -44,7 +43,7 @@ class FileQuarantinedNotification extends Notification
             ->subject('Security Alert: File Quarantined')
             ->greeting('Security Alert')
             ->line('A file has been quarantined due to security threats.')
-            ->line("File: {$this->filePath}")
+            ->line("File: {$this->scanResult->quarantine_path}")
             ->line('Threats detected:')
             ->line($threats)
             ->line('The file has been moved to quarantine for security.')

@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class FileTag extends Model
 {
     protected $fillable = [
-        'name', 'type',
+        'name',
+        'type',
     ];
 
     protected $casts = [

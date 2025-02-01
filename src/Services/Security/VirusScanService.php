@@ -5,11 +5,10 @@ namespace zennit\Storage\Services\Security;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 use RuntimeException;
 use Throwable;
+use zennit\Storage\Events\Security\FileQuarantinedEvent;
 use zennit\Storage\Models\FileScanResult;
-use zennit\Storage\Notifications\FileScanComplete;
 use zennit\Storage\Services\Security\Scanners\ClamAvScanner;
 use zennit\Storage\Services\Security\Scanners\DTO\ScanResult;
 use zennit\Storage\Services\Security\Scanners\VirusTotalScanner;
@@ -49,7 +48,7 @@ readonly class VirusScanService
 
         try {
             // Move to secure temp location for scanning
-            $tempFile = $tempPath . '/' . $file->getClientOriginalName();
+            $tempFile = $tempPath . DIRECTORY_SEPARATOR . $file->getClientOriginalName();
             $file->move($tempPath, $file->getClientOriginalName());
 
             // Perform scan
@@ -69,9 +68,8 @@ readonly class VirusScanService
             return $results;
 
         } catch (Exception $e) {
-            // Clean up on error
             if (file_exists($tempPath)) {
-                $this->cleanupTempPath($tempPath);
+                $this->cleanupScanDirectory($tempPath);
             }
             report($e);
             throw new RuntimeException('Failed to scan file: ' . $e->getMessage());
@@ -86,7 +84,7 @@ readonly class VirusScanService
      */
     private function createSecureTmpPath(): string
     {
-        $tempPath = storage_path('temp/scans/' . uniqid('scan_', true));
+        $tempPath = storage_path(config('scanning.security.tmp_path') . uniqid('scan_', true));
 
         if (!mkdir($tempPath, 0755, true)) {
             throw new RuntimeException('Failed to create temporary scan directory');
@@ -176,13 +174,8 @@ readonly class VirusScanService
         $quarantinePath = $this->quarantineFile($filepath);
         $result->updateOrFail(['quarantine_path' => $quarantinePath]);
 
-        $eventClass = config('scanning.scan_events.file_quarantined');
-        event(new $eventClass());
-
-        if (config('scanning.notifications.enabled')) {
-            $notifiable = config('scanning.notifications.notify_user');
-            Notification::send($notifiable, new FileScanComplete($result->toArray()));
-        }
+        // Only dispatch event - all notifications handled by listener
+        event(new FileQuarantinedEvent(ScanResult::fromArray($result->toArray())));
     }
 
     /**
@@ -195,7 +188,7 @@ readonly class VirusScanService
     private function quarantineFile(string $filepath): string
     {
         $quarantinePath = config('scanning.quarantine_path', storage_path('quarantine'));
-        $quarantineFile = $quarantinePath . '/' . basename($filepath) . '_' . time();
+        $quarantineFile = $quarantinePath . DIRECTORY_SEPARATOR . basename($filepath) . '_' . time();
 
         // Ensure quarantine directory exists
         if (!is_dir($quarantinePath)) {
@@ -212,16 +205,24 @@ readonly class VirusScanService
         return $quarantineFile;
     }
 
-    private function cleanupTempPath(string $path): void
+    /**
+     * Clean up the temporary scan directory and its contents
+     *
+     * @param string $scanDirectory Path to the temporary directory created by createSecureTmpPath()
+     */
+    private function cleanupScanDirectory(string $scanDirectory): void
     {
-        if (is_dir($path)) {
-            $files = scandir($path);
+        if (is_dir($scanDirectory)) {
+            $files = scandir($scanDirectory);
             foreach ($files as $file) {
                 if ($file !== '.' && $file !== '..') {
-                    unlink($path . '/' . $file);
+                    $filePath = $scanDirectory . DIRECTORY_SEPARATOR . $file;
+                    if (is_file($filePath)) {
+                        unlink($filePath);
+                    }
                 }
             }
-            rmdir($path);
+            rmdir($scanDirectory);
         }
     }
 }

@@ -16,7 +16,7 @@ class VirusTotalScanner implements AntivirusScanner
     public function __construct(private string $apiKey, private Client $client)
     {
         $this->client = new Client();
-        $this->apiKey = config('scanning.virustotal.api_key');
+        $this->apiKey = config('scanning.services.virustotal.api_key');
 
         if (empty($this->apiKey)) {
             throw new RuntimeException('VirusTotal API key not configured');
@@ -49,7 +49,7 @@ class VirusTotalScanner implements AntivirusScanner
 
     private function getUploadUrl(): string
     {
-        return $this->makeRequest(config('scanning.virustotal.url.upload'), 'GET')['data'];
+        return $this->makeRequest(config('scanning.services.virustotal.url.upload'), 'GET')['data'];
     }
 
     private function makeRequest(string $url, string $method, array $data = []): array
@@ -85,13 +85,13 @@ class VirusTotalScanner implements AntivirusScanner
 
     private function getAnalysisResults(string $analysisId): VirusTotalResponse
     {
-        $maxRetries = config('scanning.virustotal.retry');
-        $retryDelay = config('scanning.virustotal.delay');
+        $maxRetries = config('scanning.services.virustotal.retry');
+        $retryDelay = config('scanning.services.virustotal.delay');
 
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
             sleep($retryDelay);
 
-            $url = config('scanning.virustotal.url.report') . '/' . $analysisId;
+            $url = config('scanning.services.virustotal.url.report') . '/' . $analysisId;
             $response = $this->makeRequest($url, 'GET');
             $attributes = $response['data']['attributes'];
 
@@ -109,7 +109,7 @@ class VirusTotalScanner implements AntivirusScanner
     public function isAvailable(): bool
     {
         try {
-            $response = $this->client->request('GET', config('scanning.virustotal.url.base'), [
+            $response = $this->client->request('GET', config('scanning.services.virustotal.url.base'), [
                 'headers' => $this->getHeaders(),
             ]);
 

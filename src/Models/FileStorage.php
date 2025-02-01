@@ -20,6 +20,12 @@ class FileStorage extends Model
         'is_compressed',
         'storable_id',
         'storable_type',
+        'last_scanned_at',
+        'original_file_id',
+        'reference_count',
+        'last_backup_at',
+        'backup_status',
+        'status',
     ];
 
     protected $casts = [
@@ -33,5 +39,11 @@ class FileStorage extends Model
         'is_compressed' => 'boolean',
         'storable_id' => 'integer',
         'storable_type' => 'string',
+        'last_scanned_at' => 'datetime',
+        'original_file_id' => 'integer',
+        'reference_count' => 'integer',
+        'last_backup_at' => 'datetime',
+        'backup_status' => 'array',
+        'status' => 'string',
     ];
 }

@@ -13,18 +13,19 @@ use zennit\Storage\Services\Security\Scanners\DTO\ScanResult;
 
 class ClamAvScanner implements AntivirusScanner
 {
-    private Client $scanner;
-
-    public function __construct()
+    public function __construct(private Client $scanner)
     {
+
         $this->initScanner();
     }
 
     private function initScanner(): void
     {
         try {
+            $address = config('scanning.services.clamav.host') . config('scanning.services.clamav.port');
+
             $factory = new Factory();
-            $socket = $factory->createClient(config('scanning.clamav'));
+            $socket = $factory->createClient($address, config('scanning.services.clamav.timeout'));
             $this->scanner = new Client($socket);
             $this->scanner->ping();
         } catch (Exception $e) {

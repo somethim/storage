@@ -7,8 +7,8 @@ use Http;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Collection;
 use zennit\Storage\Contracts\StorageManagerInterface;
-use zennit\Storage\DTO\FileMetadata;
-use zennit\Storage\DTO\StorageOperationRequest;
+use zennit\Storage\Services\Core\DTO\FileMetadata;
+use zennit\Storage\Services\Core\DTO\StorageOperationRequest;
 
 readonly class StorageService implements StorageManagerInterface
 {

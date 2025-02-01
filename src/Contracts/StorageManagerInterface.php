@@ -3,8 +3,8 @@
 namespace zennit\Storage\Contracts;
 
 use Illuminate\Support\Collection;
-use zennit\Storage\DTO\FileMetadata;
-use zennit\Storage\DTO\StorageOperationRequest;
+use zennit\Storage\Services\Core\DTO\FileMetadata;
+use zennit\Storage\Services\Core\DTO\StorageOperationRequest;
 
 interface StorageManagerInterface
 {

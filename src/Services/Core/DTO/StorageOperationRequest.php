@@ -1,6 +1,6 @@
 <?php
 
-namespace zennit\Storage\DTO;
+namespace zennit\Storage\Services\Core\DTO;
 
 use Illuminate\Http\UploadedFile;
 

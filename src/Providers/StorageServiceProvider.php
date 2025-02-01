@@ -9,8 +9,8 @@ use zennit\Storage\Console\Commands\RescanStoredFiles;
 use zennit\Storage\Contracts\StorageManagerInterface;
 use zennit\Storage\Events\FileUploaded;
 use zennit\Storage\Events\Security\FileQuarantinedEvent;
-use zennit\Storage\Listeners\NotifyFileQuarantined;
 use zennit\Storage\Listeners\ScanForVirus;
+use zennit\Storage\Listeners\Security\NotifyFileQuarantined;
 use zennit\Storage\Services\Core\StorageService;
 use zennit\Storage\Services\Security\Scanners\ClamAvScanner;
 use zennit\Storage\Services\Security\Scanners\VirusTotalScanner;
@@ -86,8 +86,8 @@ class StorageServiceProvider extends ServiceProvider
 
         // Register event listeners
         $this->app['events']->listen(
-            \zennit\Storage\Events\FileUploaded::class,
-            \zennit\Storage\Listeners\ScanForVirus::class
+            FileUploaded::class,
+            ScanForVirus::class
         );
     }
 

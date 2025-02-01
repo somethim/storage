@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class FileTagAssociation extends Model
 {
     protected $fillable = [
-        'file_storage_id', 'file_tag_id',
+        'file_storage_id',
+        'file_tag_id',
     ];
 
     protected $casts = [

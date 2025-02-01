@@ -14,6 +14,9 @@ class FileChunk extends Model
         'chunk_path',
         'chunk_size',
         'expires_at',
+        'chunk_hash',
+        'is_validated',
+        'validation_errors',
     ];
 
     protected $casts = [
@@ -24,5 +27,8 @@ class FileChunk extends Model
         'chunk_path' => 'string',
         'chunk_size' => 'integer',
         'expires_at' => 'datetime',
+        'chunk_hash' => 'string',
+        'is_validated' => 'boolean',
+        'validation_errors' => 'array',
     ];
 }

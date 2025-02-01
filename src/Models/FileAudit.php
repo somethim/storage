@@ -13,6 +13,10 @@ class FileAudit extends Model
         'details',
         'ip_address',
         'user_agent',
+        'session_id',
+        'metadata',
+        'status',
+        'error_message',
     ];
 
     protected $casts = [
@@ -22,5 +26,9 @@ class FileAudit extends Model
         'details' => 'array',
         'ip_address' => 'string',
         'user_agent' => 'string',
+        'session_id' => 'string',
+        'metadata' => 'array',
+        'status' => 'string',
+        'error_message' => 'string',
     ];
 }

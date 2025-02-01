@@ -1,10 +1,10 @@
 <?php
 
-namespace zennit\Storage\Listeners\ListenerSetup;
+namespace zennit\Storage\Listeners\Core;
 
 use Exception;
 use Illuminate\Support\Facades\Redis;
-use zennit\Storage\Events\EventSetup\BroadcastableEvent;
+use zennit\Storage\Events\Core\BroadcastableEvent;
 
 trait BroadcastsToRedis
 {
