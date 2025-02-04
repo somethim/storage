@@ -47,7 +47,7 @@ return [
         'virustotal' => [
             'api_key' => env('VIRUSTOTAL_API_KEY'),
             'url' => [
-                'base' => 'https://www.virustotal.com/api/v3/users/current',
+                'test' => 'https://www.virustotal.com/api/v3/references', // todo: find endpoint that I can use to test if service is available
                 'upload' => 'https://www.virustotal.com/api/v3/files/upload_url',
                 'report' => 'https://www.virustotal.com/api/v3/files',
             ],

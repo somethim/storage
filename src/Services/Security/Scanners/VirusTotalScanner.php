@@ -23,6 +23,21 @@ class VirusTotalScanner implements AntivirusScanner
         }
     }
 
+    public function isAvailable(): bool
+    {
+        try {
+            $response = $this->client->request('GET', config('scanning.services.virustotal.url.base'), [
+                'headers' => $this->getHeaders(),
+            ]);
+
+            return $response->getStatusCode() === 200;
+        } catch (GuzzleException $e) {
+            report($e);
+
+            return false;
+        }
+    }
+
     public function scan(string $filepath): ScanResult
     {
         $cacheKey = 'virustotal_' . md5($filepath);
@@ -104,20 +119,5 @@ class VirusTotalScanner implements AntivirusScanner
         }
 
         throw new RuntimeException('Analysis timed out');
-    }
-
-    public function isAvailable(): bool
-    {
-        try {
-            $response = $this->client->request('GET', config('scanning.services.virustotal.url.base'), [
-                'headers' => $this->getHeaders(),
-            ]);
-
-            return $response->getStatusCode() === 200;
-        } catch (GuzzleException $e) {
-            report($e);
-
-            return false;
-        }
     }
 }
